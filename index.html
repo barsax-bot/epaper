@@ -80,6 +80,16 @@
   .tab.active { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--accent); }
 
   .field { margin-bottom: 12px; }
+  .dropzone {
+    border: 2px dashed var(--line, #ccc);
+    border-radius: 10px;
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--ink-soft, #888);
+    cursor: pointer;
+  }
+  .dropzone.dragover { background: var(--paper-dim, #f5f4f0); border-color: var(--accent); }
+  .dropzone p { margin: 4px 0; }
   .field label {
     display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 600;
   }
@@ -151,7 +161,7 @@
     <div>
       <div class="eyebrow">E-Paper Console</div>
       <h1>電子紙控制台</h1>
-      <div class="sub">週菜單 / 食譜卡 / 狀態卡 · 800×480 三色（黑/白/紅）· 透過藍牙直連</div>
+      <div class="sub">週菜單 / 狀態卡 / MEMO / 上傳圖片 · 800×480 三色（黑/白/紅）· 透過藍牙直連</div>
     </div>
   </header>
 
@@ -167,6 +177,10 @@
 
   <div class="panel">
     <h2>連線</h2>
+    <div id="knownDevices" style="display:none; margin-bottom:10px;">
+      <div style="font-size:12px; color:var(--ink-soft, #888); margin-bottom:6px;">快選裝置</div>
+      <div id="deviceChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
     <div class="conn-row">
       <span class="dot" id="connDot"></span>
       <button class="btn-primary" id="connectBtn">連接標籤</button>
@@ -181,8 +195,9 @@
 
   <div class="tabs">
     <div class="tab active" data-tab="menu">週菜單</div>
-    <div class="tab" data-tab="recipe">食譜卡</div>
     <div class="tab" data-tab="status">狀態卡</div>
+    <div class="tab" data-tab="recipe">MEMO</div>
+    <div class="tab" data-tab="image">上傳圖片</div>
   </div>
 
   <!-- ===== 週菜單 ===== -->
@@ -211,31 +226,42 @@
     <div id="dayGrid"></div>
   </div>
 
-  <!-- ===== 食譜卡 ===== -->
+  <!-- ===== MEMO ===== -->
   <div class="panel" id="tab-recipe" style="display:none;">
-    <h2>食譜內容（顯示時字會盡量放大）</h2>
-
-    <div class="quickbox">
-      <label style="font-size:12px;font-weight:700;color:var(--accent-dark);">快速輸入（自動解析）</label>
-      <div class="hint">
-        格式：用「食材：」「做法：」標記（標題部分會被忽略，因為標題已固定沿用底圖上印好的字），食材/做法內容用頓號、逗號或換行分隔每一項。<br>
-        例：食材：雞腿肉、蒜頭、醬油、米酒　做法：醃製30分鐘、煎至兩面金黃、燜煮5分鐘
-      </div>
-      <textarea id="recipeQuickInput" placeholder="貼上食譜描述…"></textarea>
-      <div class="actions" style="margin-top:8px;">
-        <button class="btn-ghost btn-sm" id="recipeParseBtn">解析並帶入</button>
-      </div>
-    </div>
-
-    <div class="note-mini" style="margin-bottom:10px;">標題直接沿用底圖上印好的「食譜」字樣，不再另外顯示自訂標題。畫面採上下分區：上方 1/3 食材、下方 2/3 做法。</div>
+    <h2>MEMO 內容（自由輸入）</h2>
+    <div class="note-mini" style="margin-bottom:10px;">底圖上原本印的「食譜」字樣已經改成「MEMO」。內容整塊自由填寫，愛怎麼排就怎麼排。</div>
     <div class="field">
-      <label>食材（一行一項，建議 6 項以內）</label>
-      <textarea id="recipeIngredients" rows="4" placeholder="雞腿肉 2片&#10;蒜頭 5瓣&#10;醬油 2大匙"></textarea>
+      <label>內容</label>
+      <textarea id="recipeText" rows="14" placeholder="雞腿肉 2片、蒜頭 5瓣、醬油 2大匙&#10;&#10;醃製30分鐘，熱鍋煎至兩面金黃，轉小火燜熟"></textarea>
     </div>
+  </div>
+
+  <!-- ===== 上傳圖片 ===== -->
+  <div class="panel" id="tab-image" style="display:none;">
+    <h2>上傳圖片（自由版面）</h2>
+    <div class="note-mini" style="margin-bottom:10px;">上傳任意圖片，瀏覽器會直接轉成電子紙可顯示的黑/白/紅三色，並套用protected-white Floyd–Steinberg誤差擴散抖動，不會經過任何伺服器。</div>
     <div class="field">
-      <label>做法（一行一步，建議 8 步以內）</label>
-      <textarea id="recipeSteps" rows="8" placeholder="雞腿肉醃製30分鐘&#10;熱鍋煎至兩面金黃&#10;轉小火燜熟"></textarea>
+      <label>圖片方向</label>
+      <div style="display:flex; gap:16px; margin-top:4px;">
+        <label style="display:flex; align-items:center; gap:4px; font-weight:400;">
+          <input type="radio" name="imgOrientation" value="landscape" checked> 橫版
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; font-weight:400;">
+          <input type="radio" name="imgOrientation" value="portrait"> 豎版
+        </label>
+      </div>
+      <div class="hint">豎版會把圖片內容旋轉90度後填滿螢幕，適合直式拍攝的照片。</div>
     </div>
+    <div class="dropzone" id="imgDropzone">
+      <p>拖曳圖片到這裡，或點擊選擇檔案</p>
+      <p class="hint">建議接近 800×480 的橫式圖片，效果最好</p>
+    </div>
+    <input type="file" id="imgFileInput" accept="image/*" style="display:none;">
+    <div class="field" style="margin-top:10px;">
+      <label>白色保護門檻（越高，越多接近白色的像素會強制留白，不參與抖動）</label>
+      <input type="range" id="whiteProtectSlider" min="0" max="255" value="235">
+    </div>
+    <div id="imgUploadStatus" class="note-mini"></div>
   </div>
 
   <!-- ===== 狀態卡 ===== -->
@@ -277,6 +303,10 @@
       </div>
     </div>
     <div class="note-mini">底圖與小圖已預先轉換成電子紙實際可顯示的黑/白/紅三色（含網點抖動處理），畫面上看到的樣子就是實際刷新後的樣子。</div>
+    <div class="field" style="margin-top:10px;">
+      <label>右欄自由備註（約8行，選填）</label>
+      <textarea id="statusFreeText" rows="8" placeholder="這裡自由發揮，例如今天待辦、交接事項……"></textarea>
+    </div>
   </div>
 
   <div class="panel">
@@ -456,6 +486,7 @@ async function connect() {
 
   await write(EpdCmd.INIT);
   setConnUI(true);
+  rememberDevice(bleDevice);
 }
 
 document.getElementById('connectBtn').addEventListener('click', async () => {
@@ -485,6 +516,93 @@ document.getElementById('reconnectBtn').addEventListener('click', () => {
   addLog("正在重連");
   setTimeout(connect, 300);
 });
+
+/* ============ 快選裝置清單 ============ */
+const LS_KNOWN_DEVICES_KEY = 'epaper_known_devices';
+const MAX_KNOWN_DEVICES = 5;
+
+function loadKnownDevices() {
+  try { return JSON.parse(localStorage.getItem(LS_KNOWN_DEVICES_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveKnownDevices(list) {
+  localStorage.setItem(LS_KNOWN_DEVICES_KEY, JSON.stringify(list));
+}
+function rememberDevice(device) {
+  if (!device || !device.name) return;
+  let list = loadKnownDevices().filter(d => d.id !== device.id);
+  list.unshift({ id: device.id, name: device.name, lastUsed: new Date().toISOString() });
+  list = list.slice(0, MAX_KNOWN_DEVICES);
+  saveKnownDevices(list);
+  renderKnownDevices();
+}
+function renderKnownDevices() {
+  const list = loadKnownDevices();
+  const wrap = document.getElementById('knownDevices');
+  const chips = document.getElementById('deviceChips');
+  if (list.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  chips.innerHTML = '';
+  list.forEach(d => {
+    const chip = document.createElement('button');
+    chip.className = 'btn-ghost btn-sm';
+    chip.style.cssText = 'display:flex; align-items:center; gap:4px;';
+    chip.innerHTML = `<span>${escapeHtml(d.name)}</span>`;
+    chip.addEventListener('click', () => quickConnect(d));
+    const rm = document.createElement('span');
+    rm.textContent = '✕';
+    rm.style.cssText = 'opacity:0.5; padding-left:4px; cursor:pointer;';
+    rm.addEventListener('click', (e) => {
+      e.stopPropagation();
+      saveKnownDevices(loadKnownDevices().filter(x => x.id !== d.id));
+      renderKnownDevices();
+    });
+    chip.appendChild(rm);
+    chips.appendChild(chip);
+  });
+}
+function escapeHtml(str) {
+  return (str || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function quickConnect(known) {
+  if (gattServer != null && gattServer.connected) {
+    if (bleDevice != null && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+  }
+  resetVariables();
+
+  // Chrome/Android/Edge 支援 getDevices()：可對已授權過的裝置直接連線，不跳系統挑選視窗
+  if (navigator.bluetooth.getDevices) {
+    try {
+      const devices = await navigator.bluetooth.getDevices();
+      const match = devices.find(d => d.id === known.id);
+      if (match) {
+        addLog(`靜默重連：${known.name}`);
+        bleDevice = match;
+        bleDevice.addEventListener('gattserverdisconnected', disconnect);
+        setTimeout(connect, 300);
+        return;
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // 不支援或找不到授權紀錄（常見於 Bluefy/iOS）：退回系統挑選視窗，並提示要選哪一個
+  addLog(`請在系統跳出的清單中選擇：「${known.name}」`);
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      optionalServices: ['62750001-d828-918d-fb46-b6c11c675aec'],
+      acceptAllDevices: true
+    });
+  } catch (e) {
+    console.error(e);
+    addLog("請檢查藍牙是否已開啟，且瀏覽器支援藍牙。");
+    return;
+  }
+  bleDevice.addEventListener('gattserverdisconnected', disconnect);
+  setTimeout(connect, 300);
+}
+
+renderKnownDevices();
 
 /* threeColor 點陣打包：與可用版本一致，未更動 */
 function processThreeColor(imageData) {
@@ -574,7 +692,7 @@ function buildDayGrid() {
     row.className = 'day-row' + (isWeekend ? ' weekend' : '');
     row.innerHTML = `
       <div class="day-label">${name}</div>
-      <input type="text" data-day="${i}" data-field="text" maxlength="40" placeholder="自由填寫，例如：滷雞腿飯，隔天便當帶">
+      <input type="text" data-day="${i}" data-field="text" maxlength="60" placeholder="自由填寫，例如：滷雞腿飯，隔天便當帶">
     `;
     grid.appendChild(row);
   });
@@ -601,14 +719,22 @@ function wrapLines(context, text, maxWidth, maxLines) {
 
 /* ---- 週菜單：表格網格、標題列、週一～週日已經直接烘焙進 T01 底圖 ----
    這裡只需要把動態文字填入對應儲存格，座標與烘焙底圖時使用的完全一致 */
-/* 新底圖（無烘焙欄位標題）安全區：790x480畫布，內容區留在裝飾邊框內側 */
+/* 依實際圖案邊界劃分：
+   A 庫存（y 200~240，避開頂部左右圖案 y<190）
+   B 週一～週五（y 248 起，rowH 27，全寬 73~729；第5列中心369.5，剛好卡在左下圖案 y>370 門檻之前）
+   C 週六、週日（緊接在B之後，y 383 起，rowH 24；水平往右閃到245~610，同時避開左下蘿蔔(x<230,y>370)、
+     右下狗狗(x>620,y>310)、底部虛線邊框(中段量測約 y=443) */
+/* 庫存再往上3行(y 149→98)，分隔線同步上移(232→181)。
+   釋出的底部空間拿來讓週一~週日改成統一7列均分，rowH加大到33，字體也放大一級。
+   週六、週日仍水平閃避到 x 245~610（避開左下蘿蔔 x<230,y>370 與右下狗狗 x>620,y>310）。 */
 const MENU_GRID = {
   left: 73, right: 729,
-  stockX: 73, stockY: 96, stockW: 656, stockLabelY: 96,
-  dividerY: 168,
-  dayLabelX: 73, dayLabelW: 62,
-  textX: 140,
-  tableTop: 178, rowH: 40,
+  stockX: 190, stockLabelY: 88, stockY: 88, stockW: 480,
+  dividerY: 181,
+  tableTop: 191, rowH: 33,
+  dayLabelX: 73, textX: 140,
+  weekendShiftIdx: [5, 6],
+  weekendDayLabelX: 245, weekendTextX: 300, weekendRight: 610,
 };
 const RECIPE_SAFE = { left: 105, right: 375, top: 160, bottom: 620 };
 const SAFE_TOP = 55, SAFE_BOTTOM = 55; // 狀態卡沿用
@@ -621,18 +747,18 @@ function renderMenu() {
 
   // 標題：新底圖沒有烘焙任何文字，「庫存」標籤跟內容都要自己畫
   ctx.fillStyle = BLACK;
-  ctx.font = 'bold 15px sans-serif';
+  ctx.font = 'bold 16px sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText('庫存', g.stockX, g.stockLabelY);
 
   const stockText = document.getElementById('stockList').value.trim();
   if (stockText) {
-    ctx.font = '14px sans-serif';
+    ctx.font = '15px sans-serif';
     const items = stockText.split('\n').map(s => s.trim()).filter(Boolean);
     const joined = items.join('、');
     const lines = wrapLines(ctx, joined, g.stockW - 4, 2);
-    lines.forEach((l, li) => ctx.fillText(l, g.stockX + 42, g.stockY + li * 17));
+    lines.forEach((l, li) => ctx.fillText(l, g.stockX + 46, g.stockY + li * 18));
   }
 
   // 分隔線
@@ -644,30 +770,35 @@ function renderMenu() {
   ctx.stroke();
 
   for (let i = 0; i < 7; i++) {
-    const y = g.tableTop + i * g.rowH;
     const isWeekend = i >= 5;
+    const isShifted = g.weekendShiftIdx.includes(i);
+    const y = g.tableTop + i * g.rowH;
+    const dayLabelX = isShifted ? g.weekendDayLabelX : g.dayLabelX;
+    const textX = isShifted ? g.weekendTextX : g.textX;
+    const rightBound = isShifted ? g.weekendRight : g.right;
 
     ctx.fillStyle = isWeekend ? '#c0392b' : BLACK;
-    ctx.font = 'bold 15px sans-serif';
+    ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(dayNames[i], g.dayLabelX, y + g.rowH / 2);
+    ctx.fillText(dayNames[i], dayLabelX, y + g.rowH / 2);
 
     const input = document.querySelector(`input[data-day="${i}"][data-field="text"]`);
     const text = input ? input.value.trim() : '';
     if (text) {
       ctx.fillStyle = BLACK;
-      ctx.font = '14px sans-serif';
-      const maxW = g.right - g.textX;
-      const lines = wrapLines(ctx, text, maxW, 2);
-      const lh = 17;
+      ctx.font = '15px sans-serif';
+      const maxW = rightBound - textX;
+      const maxLines = isShifted ? 2 : 1;
+      const lines = wrapLines(ctx, text, maxW, maxLines);
+      const lh = 18;
       const startY = y + g.rowH / 2 - ((lines.length - 1) * lh) / 2;
-      lines.forEach((l, li) => ctx.fillText(l, g.textX, startY + li * lh));
+      lines.forEach((l, li) => ctx.fillText(l, textX, startY + li * lh));
     }
   }
 }
 
-/* ---- 食譜卡：套用 T02 底圖（直式旋轉），大字，上食材下做法 ---- */
+/* ---- MEMO：套用 T02 底圖（直式旋轉），原本烘焙的「食譜」字樣蓋成「MEMO」，內容自由排版 ---- */
 function renderListOn(context, items, x, y, width, bottomLimit, numbered) {
   const availH = Math.max(20, bottomLimit - y);
   const n = Math.max(1, items.length);
@@ -697,25 +828,36 @@ function renderRecipe() {
   octx.fillStyle = WHITE; octx.fillRect(0, 0, off.width, off.height);
   if (BG_RECIPE.complete && BG_RECIPE.naturalWidth) octx.drawImage(BG_RECIPE, 0, 0, off.width, off.height);
 
-  const ingredients = document.getElementById('recipeIngredients').value.split('\n').map(s => s.trim()).filter(Boolean);
-  const steps = document.getElementById('recipeSteps').value.split('\n').map(s => s.trim()).filter(Boolean);
+  // 底圖上原本烘焙的「食譜」字樣用白底蓋掉，改畫「MEMO」
+  octx.fillStyle = WHITE;
+  octx.fillRect(155, 50, 170, 60);
+  octx.fillStyle = BLACK;
+  octx.font = 'bold 34px sans-serif';
+  octx.textAlign = 'center';
+  octx.textBaseline = 'middle';
+  octx.fillText('MEMO', 240, 80);
 
+  const text = document.getElementById('recipeText').value;
   const left = RECIPE_SAFE.left, right = RECIPE_SAFE.right, top = RECIPE_SAFE.top, bottom = RECIPE_SAFE.bottom;
-  const totalH = bottom - top;
-  const splitY = top + Math.round(totalH / 3); // 上 1/3 食材、下 2/3 做法
-  const dividerInset = 16; // 分隔線左右各再內縮，避免壓到底圖邊框裝飾
 
   octx.fillStyle = BLACK;
-  octx.fillRect(left + dividerInset, splitY, (right - left) - dividerInset * 2, 2);
-
-  octx.font = 'bold 20px sans-serif';
+  octx.font = '20px sans-serif';
   octx.textAlign = 'left';
   octx.textBaseline = 'top';
-  octx.fillText('食材', left + 2, top);
-  octx.fillText('做法', left + 2, splitY + 12);
 
-  renderListOn(octx, ingredients, left + 2, top + 30, right - left - 6, splitY - 6, false);
-  renderListOn(octx, steps, left + 2, splitY + 44, right - left - 6, bottom - 4, true);
+  const paragraphs = text.split('\n');
+  const lh = 26;
+  let y = top;
+  for (const para of paragraphs) {
+    if (y > bottom - lh) break;
+    if (!para.trim()) { y += lh; continue; }
+    const lines = wrapLines(octx, para.trim(), right - left, 999);
+    for (const line of lines) {
+      if (y > bottom - lh) break;
+      octx.fillText(line, left, y);
+      y += lh;
+    }
+  }
 
   // 將離屏畫布整體旋轉 90 度貼到主畫布（底圖與文字一起轉動）
   ctx.save();
@@ -737,40 +879,236 @@ function renderStatus() {
   const custom = document.getElementById('customText').value.trim();
   const time = document.getElementById('statusTime').value.trim();
   const note = document.getElementById('statusNote').value.trim();
+  const freeText = document.getElementById('statusFreeText').value;
   const label = selectedStatus === 'custom' ? (custom || '狀態未填寫') : statusLabels[selectedStatus];
 
   const top = SAFE_TOP, bottom = canvas.height - SAFE_BOTTOM;
 
-  const icon = statusIcons[selectedStatus];
-  const iconSize = 180; // 150 -> 放大 20%
-  const iconTop = top + 5;
-  if (icon.complete && icon.naturalWidth) {
-    ctx.drawImage(icon, canvas.width / 2 - iconSize / 2, iconTop, iconSize, iconSize);
-  }
+  // 左欄：圖示 + 狀態文字，整組區塊在左欄範圍內上下左右置中
+  const midX = canvas.width / 2;
+  const leftCenterX = midX / 2 + 60;
 
-  const labelY = iconTop + iconSize + 55;
+  const icon = statusIcons[selectedStatus];
+  const iconSize = 150;
+
+  // 依實際會畫出的元素組成清單，逐一疊加高度，最後整體置中
+  const rows = [{ type: 'icon', h: iconSize, gapBefore: 0 }];
+  rows.push({ type: 'label', h: 50, gapBefore: 28 });
+  if (time) rows.push({ type: 'time', h: 30, gapBefore: 44 });
+  if (note) rows.push({ type: 'note', h: 26, gapBefore: time ? 30 : 44 });
+
+  const totalH = rows.reduce((sum, r) => sum + r.gapBefore + r.h, 0);
+  let cursor = (top + bottom) / 2 - totalH / 2;
+
   ctx.fillStyle = BLACK;
-  ctx.font = 'bold 66px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, canvas.width / 2, labelY);
 
-  const timeY = labelY + 62;
-  const noteY = timeY + 42;
-  if (time) {
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillText(time, canvas.width / 2, timeY);
+  rows.forEach(r => {
+    cursor += r.gapBefore;
+    if (r.type === 'icon') {
+      if (icon.complete && icon.naturalWidth) {
+        ctx.drawImage(icon, leftCenterX - iconSize / 2, cursor, iconSize, iconSize);
+      }
+    } else if (r.type === 'label') {
+      ctx.font = 'bold 42px sans-serif';
+      ctx.fillText(label, leftCenterX, cursor + r.h / 2);
+    } else if (r.type === 'time') {
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText(time, leftCenterX, cursor + r.h / 2);
+    } else if (r.type === 'note') {
+      ctx.font = '24px sans-serif';
+      ctx.fillText(note, leftCenterX, cursor + r.h / 2);
+    }
+    cursor += r.h;
+  });
+
+  // 中線分隔
+  ctx.strokeStyle = BLACK;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(midX, top + 10);
+  ctx.lineTo(midX, bottom - 10);
+  ctx.stroke();
+
+  // 右欄：8 行自由文字
+  const rightLeft = midX + 30, rightRight = canvas.width - 40;
+  const rightTop = top + 15;
+  const rightRowH = (bottom - rightTop - 10) / 8;
+  const rawLines = freeText.split('\n').slice(0, 8);
+
+  ctx.fillStyle = BLACK;
+  ctx.font = '20px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  rawLines.forEach((line, i) => {
+    const y = rightTop + rightRowH * i + rightRowH / 2;
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const wrapped = wrapLines(ctx, trimmed, rightRight - rightLeft, 1);
+    ctx.fillText(wrapped[0] || '', rightLeft, y);
+  });
+}
+
+/* ============ 上傳圖片：protected-white Floyd–Steinberg 三色抖動 ============ */
+let originalImageData = null;   // 800x480，cover-fit 後的原圖 ImageData
+let ditheredImageData = null;   // 抖動後的三色結果（快取，滑桿調整時重算）
+let lastImageFilename = '';
+
+function ditherThreeColor(sourceImageData, whiteThreshold) {
+  const w = sourceImageData.width, h = sourceImageData.height;
+  const src = sourceImageData.data;
+  const buf = new Float32Array(w * h * 3);
+  for (let i = 0; i < w * h; i++) {
+    buf[i * 3] = src[i * 4];
+    buf[i * 3 + 1] = src[i * 4 + 1];
+    buf[i * 3 + 2] = src[i * 4 + 2];
   }
-  if (note) {
-    ctx.font = '34px sans-serif';
-    ctx.fillText(note, canvas.width / 2, Math.min(noteY, bottom - 10));
+  const palette = [[0, 0, 0], [255, 255, 255], [255, 0, 0]];
+  const out = new ImageData(w, h);
+
+  function diffuse(x, y, er, eg, eb, factor) {
+    if (x < 0 || x >= w || y >= h) return;
+    const idx = (y * w + x) * 3;
+    buf[idx] += er * factor;
+    buf[idx + 1] += eg * factor;
+    buf[idx + 2] += eb * factor;
+  }
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      let r = Math.max(0, Math.min(255, buf[idx * 3]));
+      let g = Math.max(0, Math.min(255, buf[idx * 3 + 1]));
+      let b = Math.max(0, Math.min(255, buf[idx * 3 + 2]));
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      let chosen;
+      if (gray >= whiteThreshold) {
+        // 白色保護：接近白色的像素直接判定為白，不擴散誤差，避免大面積留白區被抖成雜訊
+        chosen = [255, 255, 255];
+      } else {
+        let best = 0, bestDist = Infinity;
+        for (let p = 0; p < palette.length; p++) {
+          const dr = r - palette[p][0], dg = g - palette[p][1], db = b - palette[p][2];
+          const dist = dr * dr + dg * dg + db * db;
+          if (dist < bestDist) { bestDist = dist; best = p; }
+        }
+        chosen = palette[best];
+        const er = r - chosen[0], eg = g - chosen[1], eb = b - chosen[2];
+        diffuse(x + 1, y, er, eg, eb, 7 / 16);
+        diffuse(x - 1, y + 1, er, eg, eb, 3 / 16);
+        diffuse(x, y + 1, er, eg, eb, 5 / 16);
+        diffuse(x + 1, y + 1, er, eg, eb, 1 / 16);
+      }
+      const o = idx * 4;
+      out.data[o] = chosen[0]; out.data[o + 1] = chosen[1]; out.data[o + 2] = chosen[2]; out.data[o + 3] = 255;
+    }
+  }
+  return out;
+}
+
+function runDither() {
+  if (!originalImageData) return;
+  const threshold = parseInt(document.getElementById('whiteProtectSlider').value, 10);
+  ditheredImageData = ditherThreeColor(originalImageData, threshold);
+  if (activeTab === 'image') render();
+}
+
+let lastLoadedImg = null;
+
+function buildOrientedCanvas(img, orientation) {
+  const final = document.createElement('canvas');
+  final.width = canvas.width; final.height = canvas.height;
+  const fctx = final.getContext('2d');
+  fctx.fillStyle = '#ffffff';
+  fctx.fillRect(0, 0, final.width, final.height);
+
+  if (orientation === 'portrait') {
+    // 先把圖片 cover-fit 進一個直式(480x800)工作畫布，再整體旋轉90度貼到最終的800x480畫布
+    const off = document.createElement('canvas');
+    off.width = final.height; off.height = final.width; // 480 x 800
+    const octx = off.getContext('2d');
+    octx.fillStyle = '#ffffff';
+    octx.fillRect(0, 0, off.width, off.height);
+    const scale = Math.max(off.width / img.width, off.height / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    octx.drawImage(img, (off.width - dw) / 2, (off.height - dh) / 2, dw, dh);
+
+    fctx.save();
+    fctx.translate(final.width / 2, final.height / 2);
+    fctx.rotate(Math.PI / 2);
+    fctx.drawImage(off, -off.width / 2, -off.height / 2);
+    fctx.restore();
+  } else {
+    // 橫版：直接 cover-fit 進 800x480
+    const scale = Math.max(final.width / img.width, final.height / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    fctx.drawImage(img, (final.width - dw) / 2, (final.height - dh) / 2, dw, dh);
+  }
+  return final;
+}
+
+function processLoadedImage() {
+  if (!lastLoadedImg) return;
+  const orientation = document.querySelector('input[name="imgOrientation"]:checked').value;
+  const finalCanvas = buildOrientedCanvas(lastLoadedImg, orientation);
+  originalImageData = finalCanvas.getContext('2d').getImageData(0, 0, finalCanvas.width, finalCanvas.height);
+  runDither();
+}
+
+function loadImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  lastImageFilename = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      lastLoadedImg = img;
+      processLoadedImage();
+      document.getElementById('imgUploadStatus').textContent = `已上傳：${file.name}`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderImage() {
+  if (ditheredImageData) {
+    ctx.putImageData(ditheredImageData, 0, 0);
+  } else {
+    fillBg();
+    ctx.fillStyle = BLACK;
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('尚未上傳圖片', canvas.width / 2, canvas.height / 2);
   }
 }
+
+const imgDropzone = document.getElementById('imgDropzone');
+const imgFileInput = document.getElementById('imgFileInput');
+imgDropzone.addEventListener('click', () => imgFileInput.click());
+imgFileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) loadImageFile(e.target.files[0]);
+});
+imgDropzone.addEventListener('dragover', (e) => { e.preventDefault(); imgDropzone.classList.add('dragover'); });
+imgDropzone.addEventListener('dragleave', () => imgDropzone.classList.remove('dragover'));
+imgDropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  imgDropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]);
+});
+document.getElementById('whiteProtectSlider').addEventListener('input', runDither);
+document.querySelectorAll('input[name="imgOrientation"]').forEach(r => {
+  r.addEventListener('change', processLoadedImage);
+});
 
 let activeTab = 'menu';
 function render() {
   if (activeTab === 'menu') renderMenu();
   else if (activeTab === 'recipe') renderRecipe();
+  else if (activeTab === 'image') renderImage();
   else renderStatus();
 }
 document.getElementById('renderBtn').addEventListener('click', render);
@@ -782,6 +1120,7 @@ document.querySelectorAll('.tab').forEach(tabEl => {
     activeTab = tabEl.dataset.tab;
     document.getElementById('tab-menu').style.display = activeTab === 'menu' ? 'block' : 'none';
     document.getElementById('tab-recipe').style.display = activeTab === 'recipe' ? 'block' : 'none';
+    document.getElementById('tab-image').style.display = activeTab === 'image' ? 'block' : 'none';
     document.getElementById('tab-status').style.display = activeTab === 'status' ? 'block' : 'none';
     render();
   });
@@ -851,32 +1190,8 @@ function parseMenuText(text) {
   render();
 }
 
-function parseRecipeText(text) {
-  const keywordGroups = [
-    { key: 'title', patterns: [/標題[:：]?/, /名稱[:：]?/] },
-    { key: 'ingredients', patterns: [/食材[:：]?/, /材料[:：]?/] },
-    { key: 'steps', patterns: [/做法[:：]?/, /作法[:：]?/, /步驟[:：]?/] },
-  ];
-  const fields = extractByKeywords(text, keywordGroups);
-  if (Object.keys(fields).length === 0) { addLog('快速解析：找不到「標題／食材／做法」等關鍵字，未帶入。'); return; }
-
-  if (fields.ingredients) {
-    const items = fields.ingredients.split(/[、,，\n]+/).map(s => s.trim()).filter(Boolean);
-    document.getElementById('recipeIngredients').value = items.join('\n');
-  }
-  if (fields.steps) {
-    const items = fields.steps.split(/[、,，\n]+|\d+[\.\、]/).map(s => s.trim()).filter(Boolean);
-    document.getElementById('recipeSteps').value = items.join('\n');
-  }
-  addLog('快速解析完成，已帶入食譜欄位。');
-  render();
-}
-
 document.getElementById('menuParseBtn').addEventListener('click', () => {
   parseMenuText(document.getElementById('menuQuickInput').value.trim());
-});
-document.getElementById('recipeParseBtn').addEventListener('click', () => {
-  parseRecipeText(document.getElementById('recipeQuickInput').value.trim());
 });
 
 /* ============ 內容同步：本機快取 + GitHub ============ */
@@ -952,8 +1267,13 @@ function collectState() {
       updated_at: now
     },
     recipe: {
-      ingredients: document.getElementById('recipeIngredients').value,
-      steps: document.getElementById('recipeSteps').value,
+      text: document.getElementById('recipeText').value,
+      updated_at: now
+    },
+    image: {
+      sourceFilename: lastImageFilename || '',
+      whiteProtect: document.getElementById('whiteProtectSlider').value,
+      orientation: document.querySelector('input[name="imgOrientation"]:checked').value,
       updated_at: now
     },
     status: {
@@ -961,6 +1281,7 @@ function collectState() {
       customText: document.getElementById('customText').value,
       time: document.getElementById('statusTime').value,
       note: document.getElementById('statusNote').value,
+      freeText: document.getElementById('statusFreeText').value,
       updated_at: now
     }
   };
@@ -976,8 +1297,13 @@ function applyState(state) {
     });
   }
   if (state.recipe) {
-    document.getElementById('recipeIngredients').value = state.recipe.ingredients || '';
-    document.getElementById('recipeSteps').value = state.recipe.steps || '';
+    document.getElementById('recipeText').value = state.recipe.text || '';
+  }
+  if (state.image) {
+    document.getElementById('whiteProtectSlider').value = state.image.whiteProtect || 235;
+    const orientation = state.image.orientation || 'landscape';
+    const radio = document.querySelector(`input[name="imgOrientation"][value="${orientation}"]`);
+    if (radio) radio.checked = true;
   }
   if (state.status) {
     selectedStatus = state.status.selected || 'meeting';
@@ -988,12 +1314,14 @@ function applyState(state) {
     document.getElementById('customText').value = state.status.customText || '';
     document.getElementById('statusTime').value = state.status.time || '';
     document.getElementById('statusNote').value = state.status.note || '';
+    document.getElementById('statusFreeText').value = state.status.freeText || '';
   }
   if (state.active_tab) {
     activeTab = state.active_tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === activeTab));
     document.getElementById('tab-menu').style.display = activeTab === 'menu' ? 'block' : 'none';
     document.getElementById('tab-recipe').style.display = activeTab === 'recipe' ? 'block' : 'none';
+    document.getElementById('tab-image').style.display = activeTab === 'image' ? 'block' : 'none';
     document.getElementById('tab-status').style.display = activeTab === 'status' ? 'block' : 'none';
   }
 }

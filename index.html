@@ -161,36 +161,15 @@
     <div>
       <div class="eyebrow">E-Paper Console</div>
       <h1>電子紙控制台</h1>
-      <div class="sub">週菜單 / 狀態卡 / MEMO / 上傳圖片 · 800×480 三色（黑/白/紅）· 透過藍牙直連</div>
+      <div class="sub">週菜單 / 狀態卡 / MEMO / 上傳圖片 · 800×480 三色（黑/白/紅）· 藍牙直連或雲端同步</div>
     </div>
   </header>
 
   <div class="panel">
-    <h2>內容同步</h2>
     <div class="conn-row">
       <span id="syncStatus" class="conn-status">尚未設定</span>
       <button class="btn-ghost btn-sm" id="settingsBtn">GitHub 設定</button>
-      <button class="btn-accent btn-sm" id="saveContentBtn">存檔</button>
     </div>
-    <div class="note-mini">存檔會同時寫入本機快取與GitHub，下次打開自動帶回上次內容。</div>
-  </div>
-
-  <div class="panel">
-    <h2>連線</h2>
-    <div id="knownDevices" style="display:none; margin-bottom:10px;">
-      <div style="font-size:12px; color:var(--ink-soft, #888); margin-bottom:6px;">快選裝置</div>
-      <div id="deviceChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-    </div>
-    <div class="conn-row">
-      <span class="dot" id="connDot"></span>
-      <button class="btn-primary" id="connectBtn">連接標籤</button>
-      <button class="btn-ghost" id="reconnectBtn" disabled>重新連接</button>
-      <span class="conn-status" id="connStatus">尚未連接</span>
-    </div>
-    <details style="margin-top:10px;">
-      <summary>連線紀錄</summary>
-      <div id="log" style="margin-top:8px;"></div>
-    </details>
   </div>
 
   <div class="tabs">
@@ -203,19 +182,6 @@
   <!-- ===== 週菜單 ===== -->
   <div class="panel" id="tab-menu">
     <h2>週菜單內容</h2>
-
-    <div class="quickbox">
-      <label style="font-size:12px;font-weight:700;color:var(--accent-dark);">快速輸入（自動解析）</label>
-      <div class="hint">
-        格式：每天另起一段，用「週一/週二…」開頭，後面接著寫什麼都可以，自由描述。<br>
-        例：週一 醃雞腿，晚上滷雞腿飯，隔天便當帶滷雞腿加燙青菜<br>
-        不熟悉這個格式也沒關係，可以先把你想到的內容整段貼給 Claude 聊天視窗，請它幫你轉成這個格式，再貼回這裡。
-      </div>
-      <textarea id="menuQuickInput" placeholder="貼上你的一週菜單描述…"></textarea>
-      <div class="actions" style="margin-top:8px;">
-        <button class="btn-ghost btn-sm" id="menuParseBtn">解析並帶入</button>
-      </div>
-    </div>
 
     <div class="note-mini" style="margin-bottom:10px;">標題直接沿用底圖上印好的「周菜單」字樣，不再另外顯示自訂標題。</div>
     <div class="field">
@@ -254,7 +220,7 @@
     </div>
     <div class="dropzone" id="imgDropzone">
       <p>拖曳圖片到這裡，或點擊選擇檔案</p>
-      <p class="hint">建議接近 800×480 的橫式圖片，效果最好</p>
+      <p class="hint">建議圖片比例接近所選方向（橫版800×480／豎版480×800），效果最好，避免主體被裁掉</p>
     </div>
     <input type="file" id="imgFileInput" accept="image/*" style="display:none;">
     <div class="field" style="margin-top:10px;">
@@ -311,15 +277,14 @@
 
   <div class="panel">
     <h2>預覽（800×480）</h2>
+    <div class="actions" style="margin-bottom:10px;">
+      <button class="btn-ghost" id="renderBtn">更新預覽</button>
+      <button class="btn-accent btn-sm" id="saveContentBtn">存檔</button>
+    </div>
     <div class="canvas-wrap">
       <canvas id="canvas" width="800" height="480"></canvas>
     </div>
-    <div class="actions">
-      <button class="btn-ghost" id="renderBtn">更新預覽</button>
-      <button class="btn-accent" id="sendBtn" disabled>傳送到電子紙</button>
-    </div>
     <div id="status-line"></div>
-
     <details style="margin-top:14px;">
       <summary>進階設定</summary>
       <div class="adv-grid">
@@ -333,6 +298,44 @@
         </div>
       </div>
     </details>
+  </div>
+
+  <div class="panel">
+    <h2>推送</h2>
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:200px;">
+        <div class="hint" style="font-weight:700; color:var(--accent-dark); margin-bottom:6px;">雲端</div>
+        <div class="field">
+          <label>這次存檔要給哪一塊電子紙？</label>
+          <select id="targetDeviceSelect"></select>
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <input type="text" id="newDeviceInput" placeholder="新增裝置名稱" style="flex:1;">
+            <button class="btn-ghost btn-sm" id="addDeviceBtn">新增</button>
+          </div>
+          <div class="hint">裝置清單存在GitHub，跨裝置都看得到。存檔（上方）就會自動推送給這裡選的目標。</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:200px; border-left:0.5px solid var(--line); padding-left:20px;">
+        <div class="hint" style="font-weight:700; color:var(--accent-dark); margin-bottom:6px;">藍牙直推</div>
+        <div class="conn-row" style="margin-bottom:10px;">
+          <span class="dot" id="connDot"></span>
+          <span class="conn-status" id="connStatus">尚未連接</span>
+        </div>
+        <div id="knownDevices" style="display:none; margin-bottom:10px;">
+          <div style="font-size:12px; color:var(--ink-soft, #888); margin-bottom:6px;">快選裝置</div>
+          <div id="deviceChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+        <div class="conn-row">
+          <button class="btn-primary btn-sm" id="connectBtn">連接新裝置</button>
+          <button class="btn-accent btn-sm" id="sendBtn" disabled>藍牙推送</button>
+        </div>
+        <div class="hint">人在裝置附近、想跳過雲端立刻刷新時用這條路徑。</div>
+        <details style="margin-top:10px;">
+          <summary>連線紀錄</summary>
+          <div id="log" style="margin-top:8px;"></div>
+        </details>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -389,9 +392,8 @@ function addLog(logTXT, action = '') {
 
 function setConnUI(connected) {
   document.getElementById('connDot').classList.toggle('on', connected);
-  document.getElementById('connectBtn').textContent = connected ? '斷開連線' : '連接標籤';
+  document.getElementById('connectBtn').textContent = connected ? '斷開連線' : '連接新裝置';
   document.getElementById('connStatus').textContent = connected ? '已連接：' + (bleDevice ? bleDevice.name : '') : '尚未連接';
-  document.getElementById('reconnectBtn').disabled = !bleDevice || connected;
   document.getElementById('sendBtn').disabled = !connected;
 }
 
@@ -510,13 +512,6 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
   setTimeout(connect, 300);
 });
 
-document.getElementById('reconnectBtn').addEventListener('click', () => {
-  if (bleDevice != null && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
-  resetVariables();
-  addLog("正在重連");
-  setTimeout(connect, 300);
-});
-
 /* ============ 快選裝置清單 ============ */
 const LS_KNOWN_DEVICES_KEY = 'epaper_known_devices';
 const MAX_KNOWN_DEVICES = 5;
@@ -561,6 +556,45 @@ function renderKnownDevices() {
     chips.appendChild(chip);
   });
 }
+
+/* ---- 目標裝置清單：跟GitHub同步，跟BLE快選清單完全獨立（不需要本機連過藍牙） ---- */
+let targetDevices = []; // 字串陣列，來自 state.devices，例如 ["NRF_5B3CD8","NRF_090223"]
+let selectedTargetDevice = '';
+
+function renderTargetDeviceSelect() {
+  const sel = document.getElementById('targetDeviceSelect');
+  sel.innerHTML = '';
+  if (targetDevices.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '（尚未新增任何裝置，請在下方輸入名稱新增）';
+    sel.appendChild(opt);
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  targetDevices.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === selectedTargetDevice) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (!targetDevices.includes(selectedTargetDevice)) {
+    selectedTargetDevice = targetDevices[0];
+    sel.value = selectedTargetDevice;
+  }
+}
+document.getElementById('targetDeviceSelect').addEventListener('change', (e) => {
+  selectedTargetDevice = e.target.value;
+});
+document.getElementById('addDeviceBtn').addEventListener('click', () => {
+  const input = document.getElementById('newDeviceInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (!targetDevices.includes(name)) targetDevices.push(name);
+  selectedTargetDevice = name;
+  input.value = '';
+  renderTargetDeviceSelect();
+});
 function escapeHtml(str) {
   return (str || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
@@ -603,6 +637,7 @@ async function quickConnect(known) {
 }
 
 renderKnownDevices();
+renderTargetDeviceSelect();
 
 /* threeColor 點陣打包：與可用版本一致，未更動 */
 function processThreeColor(imageData) {
@@ -729,7 +764,7 @@ function wrapLines(context, text, maxWidth, maxLines) {
    週六、週日仍水平閃避到 x 245~610（避開左下蘿蔔 x<230,y>370 與右下狗狗 x>620,y>310）。 */
 const MENU_GRID = {
   left: 73, right: 729,
-  stockX: 190, stockLabelY: 88, stockY: 88, stockW: 480,
+  stockX: 190, stockLabelY: 108, stockY: 108, stockW: 480,
   dividerY: 181,
   tableTop: 191, rowH: 33,
   dayLabelX: 73, textX: 140,
@@ -747,18 +782,18 @@ function renderMenu() {
 
   // 標題：新底圖沒有烘焙任何文字，「庫存」標籤跟內容都要自己畫
   ctx.fillStyle = BLACK;
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font = 'bold 19px sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText('庫存', g.stockX, g.stockLabelY);
 
   const stockText = document.getElementById('stockList').value.trim();
   if (stockText) {
-    ctx.font = '15px sans-serif';
+    ctx.font = '18px sans-serif';
     const items = stockText.split('\n').map(s => s.trim()).filter(Boolean);
     const joined = items.join('、');
     const lines = wrapLines(ctx, joined, g.stockW - 4, 2);
-    lines.forEach((l, li) => ctx.fillText(l, g.stockX + 46, g.stockY + li * 18));
+    lines.forEach((l, li) => ctx.fillText(l, g.stockX + 46, g.stockY + li * 21));
   }
 
   // 分隔線
@@ -772,7 +807,8 @@ function renderMenu() {
   for (let i = 0; i < 7; i++) {
     const isWeekend = i >= 5;
     const isShifted = g.weekendShiftIdx.includes(i);
-    const y = g.tableTop + i * g.rowH;
+    const extraDrop = (i === 6) ? 9 : 0; // 週日單獨往下半個字幅
+    const y = g.tableTop + i * g.rowH + extraDrop;
     const dayLabelX = isShifted ? g.weekendDayLabelX : g.dayLabelX;
     const textX = isShifted ? g.weekendTextX : g.textX;
     const rightBound = isShifted ? g.weekendRight : g.right;
@@ -1162,38 +1198,6 @@ function extractByKeywords(segment, keywordGroups) {
   return result;
 }
 
-function parseMenuText(text) {
-  const dayPattern = /(週|周|星期)(一|二|三|四|五|六|日|天)/g;
-  const markers = [];
-  let m;
-  while ((m = dayPattern.exec(text)) !== null) {
-    const d = m[2] === '天' ? '日' : m[2];
-    const map = { '一': 0, '二': 1, '三': 2, '四': 3, '五': 4, '六': 5, '日': 6 };
-    markers.push({ dayIdx: map[d], index: m.index });
-  }
-  if (markers.length === 0) { addLog('快速解析：找不到「週一～週日」等日期關鍵字，未帶入。'); return; }
-
-  const dayPatternForStrip = /^(週|周|星期)(一|二|三|四|五|六|日|天)[，,、\s]*/;
-
-  for (let i = 0; i < markers.length; i++) {
-    const start = markers[i].index;
-    const end = i + 1 < markers.length ? markers[i + 1].index : text.length;
-    let segment = text.substring(start, end).trim();
-    segment = segment.replace(dayPatternForStrip, '').replace(/^[，,、\s]+|[，,、\s]+$/g, '');
-    const dayIdx = markers[i].dayIdx;
-    if (segment) {
-      const input = document.querySelector(`input[data-day="${dayIdx}"][data-field="text"]`);
-      if (input) input.value = segment;
-    }
-  }
-  addLog('快速解析完成，已帶入週菜單欄位。');
-  render();
-}
-
-document.getElementById('menuParseBtn').addEventListener('click', () => {
-  parseMenuText(document.getElementById('menuQuickInput').value.trim());
-});
-
 /* ============ 內容同步：本機快取 + GitHub ============ */
 const LS_STATE_KEY = 'epaper_state_cache';
 const LS_CONFIG_KEY = 'epaper_gh_config';
@@ -1236,6 +1240,94 @@ async function ghSaveState(data, sha) {
   return (await res.json()).content.sha;
 }
 
+/* ---- 二進位檔案（點陣圖）用：不能用 encodeURIComponent 那套（那是給文字用的） ---- */
+function b64EncodeBinary(bytes) {
+  let binary = '';
+  const chunkSize = 8192; // 分批避免 apply() 參數過多爆掉
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function ghGetSha(path) {
+  const res = await fetch(ghUrl(path), {
+    headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github+json' }
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub讀取失敗 (${res.status})`);
+  return (await res.json()).sha;
+}
+
+async function ghSaveBinary(path, bytes, sha) {
+  const body = { message: `更新點陣圖 ${new Date().toISOString()}`, content: b64EncodeBinary(bytes) };
+  if (sha) body.sha = sha;
+  const res = await fetch(ghUrl(path), {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github+json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`GitHub寫入失敗 (${res.status}): ${err.message || ''}`);
+  }
+  return (await res.json()).content.sha;
+}
+
+async function exportToGitHub() {
+  if (!ghConfig || !ghConfig.token) {
+    addLog('尚未設定GitHub，請先點「GitHub 設定」。');
+    return;
+  }
+  const targetDevice = selectedTargetDevice;
+  if (!targetDevice) {
+    addLog('尚未選擇目標裝置，請先在上方輸入裝置名稱並新增。');
+    return;
+  }
+  addLog(`開始匯出點陣圖到GitHub（目標裝置：${targetDevice}）…`);
+  try {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const processed = processThreeColor(imageData); // 800x480 三色，黑白半+紅白半
+
+    const imgPath = `images/${targetDevice}.bin`;
+    const imgSha = await ghGetSha(imgPath);
+    await ghSaveBinary(imgPath, processed, imgSha);
+    addLog(`點陣圖已上傳：${imgPath}`);
+
+    // manifest.json 現在是多裝置格式：{ devices: { <裝置名稱>: { image, active_tab, updated_at } } }
+    const manifestSha = await ghGetSha('manifest.json');
+    let manifest = { devices: {} };
+    if (manifestSha) {
+      const res = await fetch(ghUrl('manifest.json'), {
+        headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        try { manifest = JSON.parse(b64DecodeUnicode(json.content)); } catch (e) { manifest = { devices: {} }; }
+        if (!manifest.devices) manifest.devices = {};
+      }
+    }
+    manifest.devices[targetDevice] = {
+      image: imgPath,
+      active_tab: activeTab,
+      updated_at: new Date().toISOString(),
+    };
+
+    const body = { message: `更新manifest（${targetDevice}） ${new Date().toISOString()}`, content: b64EncodeUnicode(JSON.stringify(manifest, null, 2)) };
+    if (manifestSha) body.sha = manifestSha;
+    const res2 = await fetch(ghUrl('manifest.json'), {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github+json' },
+      body: JSON.stringify(body)
+    });
+    if (!res2.ok) throw new Error(`manifest寫入失敗 (${res2.status})`);
+    addLog(`manifest.json 已更新（${targetDevice}），ESP32下次輪詢就會抓到新圖。`);
+  } catch (e) {
+    console.error(e);
+    addLog('匯出失敗：' + e.message);
+  }
+}
+
 function setSyncStatus(text, color) {
   const el = document.getElementById('syncStatus');
   el.textContent = text;
@@ -1257,6 +1349,7 @@ function collectState() {
   const now = new Date().toISOString();
   return {
     version: 1,
+    devices: targetDevices,
     active_tab: activeTab,
     menu: {
       stockList: document.getElementById('stockList').value,
@@ -1289,6 +1382,10 @@ function collectState() {
 
 function applyState(state) {
   if (!state) return;
+  if (Array.isArray(state.devices)) {
+    targetDevices = state.devices;
+    renderTargetDeviceSelect();
+  }
   if (state.menu) {
     document.getElementById('stockList').value = state.menu.stockList || '';
     (state.menu.days || []).forEach((t, i) => {
@@ -1358,6 +1455,8 @@ document.getElementById('saveContentBtn').addEventListener('click', async () => 
   setSyncStatus('同步中…', '#854f0b');
   try {
     stateSha = await ghSaveState(state, stateSha);
+    render(); // 確保畫布是最新內容再匯出
+    await exportToGitHub();
     setSyncStatus('已同步 · ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }), '#0f6e56');
   } catch (e) {
     console.error(e);

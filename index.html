@@ -284,7 +284,6 @@
     <div class="canvas-wrap">
       <canvas id="canvas" width="800" height="480"></canvas>
     </div>
-    <div id="status-line"></div>
     <details style="margin-top:14px;">
       <summary>進階設定</summary>
       <div class="adv-grid">
@@ -302,6 +301,7 @@
 
   <div class="panel">
     <h2>推送</h2>
+    <div id="status-line"></div>
     <div style="display:flex; gap:20px; flex-wrap:wrap;">
       <div style="flex:1; min-width:200px;">
         <div class="hint" style="font-weight:700; color:var(--accent-dark); margin-bottom:6px;">雲端</div>
@@ -530,6 +530,14 @@ function rememberDevice(device) {
   list = list.slice(0, MAX_KNOWN_DEVICES);
   saveKnownDevices(list);
   renderKnownDevices();
+
+  // 藍牙連過的裝置，順便也加進雲端目標清單，不用手動再輸入一次
+  if (!targetDevices.includes(device.name)) {
+    targetDevices.push(device.name);
+    selectedTargetDevice = device.name;
+    renderTargetDeviceSelect();
+    addLog(`已把「${device.name}」加進雲端目標清單，記得按一次「存檔」才會真的寫進GitHub。`);
+  }
 }
 function renderKnownDevices() {
   const list = loadKnownDevices();
